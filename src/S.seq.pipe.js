@@ -15,7 +15,7 @@
     }
 
     SeqCombinator.prototype = new K.ch.K();
-    SeqCombinatory.prototype.pipe = pipe;
+    SeqCombinator.prototype.pipe = pipe;
 
 
     function pipe() {

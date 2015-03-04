@@ -10,12 +10,10 @@
 
     S.seq = seq;
 
-    seq.S = seqDataCombinator;
-
     function seq(values) {
         var seq = S.data(values);
 
-        seq.S = new seqDataCombinator(seq);
+        seq.S = new seqCombinator(seq);
 
         seq.push    = push;
         seq.pop     = pop;
@@ -27,17 +25,18 @@
         return seq;
     }
 
-    function map(comb, enter, exit, move) {
-        var items = [],
+    function map(enter, exit, move) {
+        var seq = this.seq,
+            items = [],
             mapped = [],
             len = 0;
 
-        var map = S(function () {
-            var new_items = comb.seq(),
+        var map = S.on(seq).S(function map() {
+            var new_items = seq(),
                 new_len = new_items.length,
                 temp = new Array(new_len),
                 moved = new Array(len),
-                i, j, k, item;
+                i, j, k, item, enterItem;
 
             // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
             NEXT:
@@ -52,19 +51,30 @@
                     }
                 }
                 if (exit) exit(item, i);
+                enter && item.dispose();
             }
 
             if (move && moved.length) move(moved);
 
             // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
-            for (i = 0; i < new_len; i++) {
-                if (temp.hasOwnProperty(i)) {
-                    mapped[i] = temp[i];
-                } else {
-                    item = new_items[i];
-                    mapped[i] = enter ? enter(item, i) : item;
+            S.pin(function map() {
+                for (var i = 0; i < new_len; i++) {
+                    if (temp.hasOwnProperty(i)) {
+                        mapped[i] = temp[i];
+                    } else {
+                        item = new_items[i];
+                        if (enter) {
+                            // capture the current value of item and i in a closure
+                            enterItem = (function (item, i) {
+                                            return function () { return enter(item, i); };
+                                        })(item, i);
+                            mapped[i] = S(enterItem);
+                        } else {
+                            mapped[i] = item;
+                        }
+                    }
                 }
-            }
+            });
 
             // 3) in case the new set is shorter than the old, set the length of the mapped array
             len = mapped.length = new_len;
@@ -75,218 +85,70 @@
             return mapped;
         });
 
-        map.S = new seqFormulaCombinator(map);
+        map.S = new seqCombinator(map);
 
         return map;
     }
 
-    function order(comb, fn) {
-        var order = S(function () { return _.sortBy(comb.seq(), fn); });
+    function order(fn) {
+        var seq = this.seq,
+            order = S(function () { return _.sortBy(seq(), fn); });
 
-        order.S = new seqFormulaCombinator(order);
+        order.S = new seqCombinator(order);
 
         return order;
     }
 
-    function filter(comb, predicate) {
-        var filter = S(function () { return _.filter(comb.seq(), predicate); });
+    function filter(predicate) {
+        var seq = this.seq,
+            filter = S(function () { return _.filter(seq(), predicate); });
 
-        filter.S = new seqFormulaCombinator(filter);
+        filter.S = new seqCombinator(filter);
 
         return filter;
     }
 
-    function append(comb, others) {
-        var append = S(function () {
-            return Array.prototype.concat.apply(comb.seq(), _.map(others, function (o) { return o(); }));
-        });
+    function append(others) {
+        var seq = this.seq,
+            append = S(function () {
+                return seq().concat(_.map(others, function (o) { return o(); }));
+            });
 
-        append.S = new seqFormulaCombinator(append);
+        append.S = new seqCombinator(append);
 
         return append;
     }
 
-    function enter(comb, fn) {
-        var values = S.peek(comb.seq).map(_fn),
-            outs = new Delta(),
-            ch = K.ch(outs);
+    function reduce(fn, seed) {
+        var seq = this.seq,
+            reduce = S(function () { return _.reduce(source(), fn, seed); });
 
-        var ins = getDelta(comb);
+        reduce.S = new seqCombinator(reduce);
 
-        var enter = S(function () {
-            var i, exited, entered;
-
-            comb.delta();
-
-            while (ins.next) {
-                ins = ins.next;
-
-                exited = [], entered = [];
-
-                for (i in ins.exited) exited[i] = values[i];
-                for (i in ins.entered) entered[i] = _fn(ins.entered[i], i);
-
-                outs = outs.next = new Delta(values, exited, ins.moved, entered, ins.length);
-
-                applyDelta(values, outs);
-
-                ch(outs);
-            }
-
-            return values;
-        });
-
-        enter.S = new seqFormulaCombinator(enter, ch);
-
-        return enter;
-
-        function _fn(x, i) {
-            var v = fn(x, i);
-            return v === undefined ? x : v;
-        }
+        return reduce;
     }
 
-    function exit(comb, fn) {
-        return tapDelta(comb, function (delta) { delta.exited.map(fn); });
+    function values() {
+        var seq = this.seq,
+            values = S(function () { return _.map(seq(), function (o) { return o(); }); });
+
+        values.S = new seqCombinator(values);
+
+        return values;
     }
 
-    function move(comb, fn) {
-        return tapDelta(comb, function (delta) { if (delta.moved.length) fn(delta.moved); });
-    }
-
-    function tapDelta(comb, fn) {
-        var delta = getDelta(comb);
-
-        var tap = S(function () {
-            comb.delta();
-
-            while (delta.next) {
-                delta = delta.next;
-                fn(delta);
-            }
-
-            return delta.values;
-        });
-
-        tap.S = new seqFormulaCombinator(tap, comb.delta);
-
-        return tap;
-    }
-
-    function getDelta(comb) {
-        var delta;
-
-        if (!comb.delta) {
-            delta = new Delta();
-
-            comb.delta = S(function () {
-                var current = comb.seq();
-
-                delta = delta.next = compare(delta.values, current.slice());
-
-                return delta;
-            });
-        } else {
-            delta = S.peek(comb.delta);
-        }
-
-        return delta;
-    }
-
-    function compare(xs, ys) {
-        var exited = [],
-            moved = [],
-            entered = [],
-            found = [],
-            xlen = xs.length,
-            ylen = ys.length,
-            i, j, k, x, y;
-
-        NEXT:
-        for (i = 0, k = 0; i < xlen; i++) {
-            x = xs[i];
-            for (j = 0; j < ylen; j++, k = (k + 1) % ylen) {
-                y = ys[k];
-                if (x === y && !found.hasOwnProperty(k)) {
-                    found[k] = true;
-                    if (i !== k) moved[i] = k;
-                    k = (k + 1) % ylen;
-                    continue NEXT;
-                }
-            }
-            exited[i] = x;
-        }
-
-        for (k = 0; k < ylen; k++) {
-            if (!found.hasOwnProperty(k)) {
-                entered[k] = ys[k];
-            }
-        }
-
-        return new Delta(ys, exited, moved, entered, ylen);
-    }
-
-    function Delta(values, exited, moved, entered, len) {
-        this.values = values || [];
-        this.exited = exited || [];
-        this.moved = moved || [];
-        this.entered = entered || [];
-        this.length = len || 0;
-        this.next = null;
-    }
-
-    function applyDelta(array, delta) {
-        var temp = [],
-            moved = delta.moved,
-            entered = delta.entered,
-            i, j;
-
-        for (i in moved) {
-            j = moved[i];
-            if (j < i) array[j] = array[i];
-            else temp[j] = array[i];
-        }
-
-        for (i in temp) {
-            array[i] = temp[i];
-        }
-
-        for (i in entered) {
-            array[i] = entered[i];
-        }
-
-        array.length = delta.length;
-    }
-
-    function reduce(source, fn, seed) {
-        return S(function () { return _.reduce(source(), fn, seed); });
-    }
-
-    function seqDataCombinator(seq, delta) {
-        S.data.S.call(this);
-
+    function seqCombinator(seq) {
         this.seq = seq;
-        this.delta = delta;
     }
 
-    function seqFormulaCombinator(seq, delta) {
-        S.formula.S.call(this, seq.S._update, seq.S._source_offsets, seq.S._source_listeners);
-
-        this.seq = seq;
-        this.delta = delta;
-    }
-
-    seqDataCombinator.prototype = new S.data.S();
-    seqFormulaCombinator.prototype = new S.formula.S(null);
-
-    seqDataCombinator.prototype.map    = seqFormulaCombinator.prototype.map    = function _S_map(enter, exit, move) { return map   (this, enter, exit, move); },
-    seqDataCombinator.prototype.order  = seqFormulaCombinator.prototype.order  = function _S_order(fn)              { return order (this, fn); },
-    seqDataCombinator.prototype.filter = seqFormulaCombinator.prototype.filter = function _S_filter(fn)             { return filter(this, fn); },
-    seqDataCombinator.prototype.append = seqFormulaCombinator.prototype.append = function _S_append()               { return append(this, arguments); },
-    seqDataCombinator.prototype.enter  = seqFormulaCombinator.prototype.enter  = function _S_enter(fn)              { return enter (this, fn); },
-    seqDataCombinator.prototype.exit   = seqFormulaCombinator.prototype.exit   = function _S_exit(fn)               { return exit  (this, fn); },
-    seqDataCombinator.prototype.move   = seqFormulaCombinator.prototype.move   = function _S_move(fn)               { return move  (this, fn); },
-    seqDataCombinator.prototype.reduce = seqFormulaCombinator.prototype.reduce = function _S_reduce(fn, seed)       { return reduce(this, fn, seed); }
+    seqCombinator.prototype = {
+        map: map,
+        order: order,
+        filter: filter,
+        append: append,
+        reduce: reduce,
+        values: values
+    };
 
     function push(item) {
         var values = S.peek(this);
