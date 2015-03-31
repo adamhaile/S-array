@@ -1,0 +1,25 @@
+{
+  "name": "S-array",
+  "version": "0.0.1",
+  "description": "Array library for S.js",
+  "main": "src/S.array.js",
+  "dependencies": {
+  },
+  "devDependencies": {
+      "jasmine-core": "^2.2.0",
+      "karma": "^0.12.31",
+      "karma-jasmine": "^0.3.5",
+      "karma-phantomjs-launcher": "^0.1.4"
+  },
+  "scripts": {
+    "test": "karma start"
+  },
+  "keywords": [
+    "S.js",
+    "reactive",
+    "array",
+    "sequence"
+  ],
+  "author": "Adam Haile",
+  "license": "MIT"
+}

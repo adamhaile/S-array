@@ -1,0 +1,5 @@
+##
+# Mac desktop service store files
+.DS_Store
+
+/node_modules/
