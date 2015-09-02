@@ -56,10 +56,7 @@
         s.orderBy     = orderBy;
 
         // schedulers
-        s.defer       = defer;
-        s.throttle    = throttle;
-        s.debounce    = debounce;
-        s.pause       = pause;
+        s.gate        = gate;
 
         return s;
     }
@@ -418,18 +415,7 @@
     }
 
     // schedulers
-    function defer() {
-        return transformer(S.defer().S(this));
-    }
-
-    function throttle(t) {
-        return transformer(S.throttle(t).S(this));
-    }
-    function debounce(t) {
-        return transformer(S.debounce(t).S(this));
-    }
-
-    function pause(collector) {
-        return transformer(S.pause(collector).S(this));
+    function gate(collector) {
+        return transformer(S.gate(collector).S(this));
     }
 });
