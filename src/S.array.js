@@ -1,3 +1,4 @@
+/* globals define */
 // sets, unordered and ordered, for S.js
 (function (package) {
     if (typeof exports === 'object')
@@ -14,7 +15,7 @@
         if (!Array.isArray(values))
             throw new Error("S.array must be initialized with an array");
 
-        var array = S.data(values);
+        var data = S.data(values);
 
         // add mutators
         array.pop       = pop;
@@ -28,6 +29,73 @@
         array.removeAll = removeAll;
 
         return transformer(array);
+        
+        function array(newvalues) {
+            if (arguments.length > 0) {
+                values = newvalues;
+                return data(newvalues);
+            } else {
+                return data();
+            }
+        }
+        
+        // mutators
+        function push(item) {
+            values.push(item);
+            data(values);
+            return array;
+        }
+    
+        function pop(item) {
+            var value = values.pop();
+            data(values);
+            return value;
+        }
+    
+        function unshift(item) {
+            values.unshift(item);
+            data(values);
+            return array;
+        }
+    
+        function shift(item) {
+            var value = values.shift();
+            data(values);
+            return value;
+        }
+    
+        function splice(index, count, item) {
+            Array.prototype.splice.apply(values, arguments);
+            data(values);
+            return array;
+        }
+    
+        function remove(item) {
+            for (var i = 0; i < values.length; i++) {
+                if (values[i] === item) {
+                    values.splice(i, 1);
+                    break;
+                }
+            }
+            
+            data(values);
+            return array;
+        }
+    
+        function removeAll(item) {
+            var i = 0;
+    
+            while (i < values.length) {
+                if (values[i] === item) {
+                    values.splice(i, 1);
+                } else {
+                    i++;
+                }
+            }
+            
+            data(values);
+            return array;
+        }
     }
 
     // util to add transformer methods
@@ -56,7 +124,7 @@
         s.orderBy     = orderBy;
 
         // schedulers
-        s.gate        = gate;
+        s.async        = async;
 
         return s;
     }
@@ -67,13 +135,13 @@
             mapped = [],
             len = 0;
 
-        var mapS = S.on(seq).S(function mapS() {
+        var mapS = S(function mapS() {
             var new_items = seq(),
                 new_len = new_items.length,
                 temp = new Array(new_len),
-                from = [],
-                to = [],
-                i, j, k, item, enterItem;
+                from, to, i, j, k, item;
+
+            if (move) from = [], to = [];
 
             // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
             NEXT:
@@ -82,34 +150,30 @@
                 for (j = 0; j < new_len; j++, k = (k + 1) % new_len) {
                     if (items[i] === new_items[k] && !temp.hasOwnProperty(k)) {
                         temp[k] = item;
-                        if (i !== k) { from.push(i); to.push(k); }
+                        if (move && i !== k) { from.push(i); to.push(k); }
                         k = (k + 1) % new_len;
                         continue NEXT;
                     }
                 }
-                if (exit) exit(item, i);
-                enter && item.dispose();
+                if (exit) S.sample(function () { exit(item, i); });
+                if (enter) S.dispose(item);
             }
 
-            if (move && from.length) move(from, to);
+            if (move && from.length) S.sample(function () { move(from, to); });
 
             // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
-            for (var i = 0; i < new_len; i++) {
+            for (i = 0; i < new_len; i++) {
                 if (temp.hasOwnProperty(i)) {
                     mapped[i] = temp[i];
                 } else {
                     item = new_items[i];
-                    if (enter) {
-                        // capture the current value of item and i in a closure
-                        enterItem = (function (item, i) {
-                                        return function () { return enter(item, i); };
-                                    })(item, i);
-                        mapped[i] = S.pin().S(enterItem);
-                    } else {
-                        mapped[i] = item;
-                    }
+                    mapped[i] = enter ? (function (item, i) { 
+                        return S.orphan().S(function () { return enter(item, i); }); 
+                    })(item, i) : item;
                 }
             }
+            
+            S.cleanup(function (final) { if (final && enter) mapped.map(S.dispose); });
 
             // 3) in case the new set is shorter than the old, set the length of the mapped array
             len = mapped.length = new_len;
@@ -122,13 +186,13 @@
 
         return transformer(mapS);
     }
-
+    
     function forEach(enter, exit, move) {
         var seq = this,
             items = [],
             len = 0;
 
-        var forEach = S.on(seq).S(function forEach() {
+        var forEach = S(function forEach() {
             var new_items = seq(),
                 new_len = new_items.length,
                 found = new Array(new_len),
@@ -155,7 +219,7 @@
 
             // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
             if (enter) {
-                S.pin(function forEach() {
+                S.sample(function forEach() {
                     for (var i = 0; i < new_len; i++) {
                         if (!found[i]) enter(new_items[i], i);
                     }
@@ -336,86 +400,8 @@
         }));
     }
 
-    // mutators
-    function push(item) {
-        var values = S.peek(this);
-
-        values.push(item);
-        this(values);
-
-        return this;
-    }
-
-    function pop(item) {
-        var values = S.peek(this),
-            value = values.pop();
-
-        this(values);
-
-        return value;
-    }
-
-    function unshift(item) {
-        var values = S.peek(this);
-
-        values.unshift(item);
-        this(values);
-
-        return this;
-    }
-
-    function shift(item) {
-        var values = S.peek(this),
-            value = values.shift();
-
-        this(values);
-
-        return value;
-    }
-
-    function splice(index, count, item) {
-        var values = S.peek(this);
-
-        Array.prototype.splice.apply(values, arguments);
-        this(values);
-
-        return this;
-    }
-
-    function remove(item) {
-        var values = S.peek(this);
-
-        for (var i = 0; i < values.length; i++) {
-            if (values[i] === item) {
-                values.splice(i, 1);
-                break;
-            }
-        }
-
-        this(values);
-
-        return this;
-    }
-
-    function removeAll(item) {
-        var values = S.peek(this),
-            i = 0;
-
-        while (i < values.length) {
-            if (values[i] === item) {
-                values.splice(i, 1);
-            } else {
-                i++;
-            }
-        }
-
-        this(values);
-
-        return this;
-    }
-
     // schedulers
-    function gate(collector) {
-        return transformer(S.gate(collector).S(this));
+    function async(scheduler) {
+        return transformer(S.async(scheduler).S(this));
     }
 });

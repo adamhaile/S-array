@@ -1,3 +1,4 @@
+/* globals describe, expect, beforeEach, jasmine, it, S */
 describe("S.array()", function () {
     it("is created with an array", function () {
         var a = S.array([1, 2, 3]);
@@ -7,7 +8,7 @@ describe("S.array()", function () {
 
     it("throws if not initialized with an array", function () {
         expect(function () {
-            var a = S.array(1, 2, 3);
+            S.array(1, 2, 3);
         }).toThrow();
     });
 });
@@ -164,21 +165,21 @@ describe("S.array.forEach", function () {
     });
 
     it("behaves like Array.prototype.forEach", function () {
-        var r = "",
-        s = a.forEach(function (v) { r += v; });
+        var r = "";
+        a.forEach(function (v) { r += v; });
         expect(r).toEqual("abc");
     });
 
     it("tracks changes in source", function () {
-        var r = "",
-        s = a.forEach(function (v) { r += v; });
+        var r = "";
+        a.forEach(function (v) { r += v; });
         a.unshift("d");
         expect(r).toEqual("abcd");
     });
 
     it("ignores prior items", function () {
-        var enter = jasmine.createSpy(),
-        s = a.forEach(enter);
+        var enter = jasmine.createSpy();
+        a.forEach(enter);
         enter.calls.reset();
         a.unshift("d");
         expect(enter.calls.count()).toBe(1);
@@ -186,16 +187,16 @@ describe("S.array.forEach", function () {
     });
 
     it("reports when a value exits the array", function () {
-        var exit = jasmine.createSpy(),
-        s = a.forEach(null, exit);
+        var exit = jasmine.createSpy();
+        a.forEach(null, exit);
         a.pop();
         expect(exit.calls.count()).toBe(1);
         expect(exit).toHaveBeenCalledWith("c", 2);
     });
 
     it("reports when a value moves in the array", function () {
-        var move = jasmine.createSpy(),
-        s = a.forEach(null, null, move);
+        var move = jasmine.createSpy();
+        a.forEach(null, null, move);
         a(["a", "c", "b"]);
         expect(move.calls.count()).toBe(1);
         expect(move).toHaveBeenCalledWith([1, 2], [2, 1]);
@@ -203,8 +204,8 @@ describe("S.array.forEach", function () {
 
     it("ignores changes to other dependencies", function () {
         var d = S.data(1),
-        enter = jasmine.createSpy(),
-        s = a.forEach(function (v) { d(); enter(); });
+	        enter = jasmine.createSpy();
+        a.forEach(function (v) { d(); enter(); });
         enter.calls.reset();
         d(2);
         expect(enter.calls.count()).toBe(0);
@@ -256,15 +257,15 @@ describe("S.array.map", function () {
     });
 
     it("reports when a value exits the array", function () {
-        var exit = jasmine.createSpy(),
-            s = a.map(null, exit);
+        var exit = jasmine.createSpy();
+        a.map(null, exit);
         a.pop();
         expect(exit).toHaveBeenCalledWith(2, 2);
     });
 
     it("reports when a value moves in the array", function () {
-        var move = jasmine.createSpy(),
-            s = a.map(null, null, move);
+        var move = jasmine.createSpy();
+        a.map(null, null, move);
         a([1, 2, 3]);
         expect(move).toHaveBeenCalledWith([1, 2], [2, 1]);
     });
