@@ -15,14 +15,19 @@
         if (!Array.isArray(values))
             throw new Error("S.array must be initialized with an array");
 
-        var data = S.data(values);
+        var dirty     = S.data(false),
+            mutations = [],
+            mutcount  = 0,
+            pops      = 0,
+            shifts    = 0,
+            data      = S.on(dirty, update, values, true);
 
         // add mutators
-        array.pop       = pop;
         array.push      = push;
+        array.pop       = pop;
+        array.unshift   = unshift;
         array.shift     = shift;
         array.splice    = splice;
-        array.unshift   = unshift;
 
         // not ES5
         array.remove    = remove;
@@ -32,68 +37,92 @@
         
         function array(newvalues) {
             if (arguments.length > 0) {
-                values = newvalues;
-                return data(newvalues);
+                mutation(function array() { values = newvalues; });
+                return newvalues;
             } else {
                 return data();
             }
         }
+
+        function mutation(m) {
+            mutations[mutcount++] = m;
+            dirty(true);
+        }
+        
+        function update() {
+            if (pops)   values.splice(values.length - pops, pops);
+            if (shifts) values.splice(0, shifts);
+            
+            pops     = 0;
+            shifts   = 0;
+            
+            for (var i = 0; i < mutcount; i++) {
+                mutations[i]();
+                mutations[i] = null;
+            }
+            
+            mutcount = 0;
+            
+            return values;
+        }
         
         // mutators
         function push(item) {
-            values.push(item);
-            data(values);
+            mutation(function push() { values.push(item); });
             return array;
         }
     
-        function pop(item) {
-            var value = values.pop();
-            data(values);
-            return value;
+        function pop() {
+            array();
+            if ((pops + shifts) < values.length) {
+                var value = values[values.length - ++pops];
+                dirty(true);
+                return value;
+            }
         }
     
         function unshift(item) {
-            values.unshift(item);
-            data(values);
+            mutation(function unshift() { values.unshift(item); });
             return array;
         }
     
-        function shift(item) {
-            var value = values.shift();
-            data(values);
-            return value;
+        function shift() {
+            array();
+            if ((pops + shifts) < values.length) {
+                var value = values[shifts++];
+                dirty(true);
+                return value;
+            }
         }
     
-        function splice(index, count, item) {
-            Array.prototype.splice.apply(values, arguments);
-            data(values);
+        function splice(/* arguments */) {
+            var args = Array.prototype.slice.call(arguments);
+            mutation(function splice() { Array.prototype.splice.apply(values, args); });
             return array;
         }
     
         function remove(item) {
-            for (var i = 0; i < values.length; i++) {
-                if (values[i] === item) {
-                    values.splice(i, 1);
-                    break;
+            mutation(function remove() {
+                for (var i = 0; i < values.length; i++) {
+                    if (values[i] === item) {
+                        values.splice(i, 1);
+                        break;
+                    }
                 }
-            }
-            
-            data(values);
+            });
             return array;
         }
     
         function removeAll(item) {
-            var i = 0;
-    
-            while (i < values.length) {
-                if (values[i] === item) {
-                    values.splice(i, 1);
-                } else {
-                    i++;
+            mutation(function removeAll() {
+                for (var i = 0; i < values.length; ) {
+                    if (values[i] === item) {
+                        values.splice(i, 1);
+                    } else {
+                        i++;
+                    }
                 }
-            }
-            
-            data(values);
+            });
             return array;
         }
     }
@@ -124,7 +153,7 @@
         s.orderBy     = orderBy;
 
         // schedulers
-        s.async        = async;
+        s.defer       = defer;
 
         return s;
     }
@@ -146,20 +175,20 @@
             // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
             NEXT:
             for (i = 0, k = 0; i < len; i++) {
-                item = mapped[i];
+                item = items[i];
                 for (j = 0; j < new_len; j++, k = (k + 1) % new_len) {
-                    if (items[i] === new_items[k] && !temp.hasOwnProperty(k)) {
-                        temp[k] = item;
+                    if (item === new_items[k] && !temp.hasOwnProperty(k)) {
+                        temp[k] = mapped[i];
                         if (move && i !== k) { from.push(i); to.push(k); }
                         k = (k + 1) % new_len;
                         continue NEXT;
                     }
                 }
-                if (exit) S.sample(function () { exit(item, i); });
-                if (enter) S.dispose(item);
+                if (exit) S.sample(function () { exit(item, enter ? mapped[i]() : mapped[i], i); });
+                if (enter) S.dispose(mapped[i]);
             }
 
-            if (move && from.length) S.sample(function () { move(from, to); });
+            if (move && from.length) S.sample(function () { move(items, mapped, from, to); });
 
             // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
             for (i = 0; i < new_len; i++) {
@@ -167,9 +196,9 @@
                     mapped[i] = temp[i];
                 } else {
                     item = new_items[i];
-                    mapped[i] = enter ? (function (item, i) { 
-                        return S.orphan().S(function () { return enter(item, i); }); 
-                    })(item, i) : item;
+                    mapped[i] = enter ? (function (item, value, i) { 
+                        return S.orphan().S(function () { return value = enter(item, value, i); }); 
+                    })(item, undefined, i) : item;
                 }
             }
             
@@ -401,7 +430,7 @@
     }
 
     // schedulers
-    function async(scheduler) {
-        return transformer(S.async(scheduler).S(this));
+    function defer(scheduler) {
+        return transformer(S.defer(scheduler).S(this));
     }
 });

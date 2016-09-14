@@ -66,6 +66,95 @@ describe("S.array mutator", function () {
     });
 });
 
+describe("(in event) S.array mutator", function () {
+    var a, l;
+
+    beforeEach(function () {
+        a = S.array([1, 2, 3]);
+        l = S(function () { return a().length; });
+    });
+
+    it("push acts like Array.prototype.push", function () {
+        S.event(function () {
+            expect(a.push(4)).toBe(a);
+            expect(a()).toEqual([1, 2, 3]);
+            expect(l()).toBe(3);
+        });
+        expect(a()).toEqual([1, 2, 3, 4]);
+        expect(l()).toBe(4);
+    });
+
+    it("pop acts like Array.prototype.pop", function () {
+        S.event(function () {
+            expect(a.pop()).toBe(3);
+            expect(a.pop()).toBe(2);
+            expect(a.pop()).toBe(1);
+            expect(a.pop()).toBe(undefined);
+            expect(a.pop()).toBe(undefined);
+            expect(a()).toEqual([1, 2, 3]);
+            expect(l()).toBe(3);
+        });
+        expect(a()).toEqual([]);
+        expect(l()).toBe(0);
+    });
+
+    it("unshift acts like Array.prototype.unshift", function () {
+        S.event(function () {
+            expect(a.unshift(0)).toBe(a);
+            expect(a()).toEqual([1, 2, 3]);
+            expect(l()).toBe(3);
+        });
+        expect(a()).toEqual([0, 1, 2, 3]);
+        expect(l()).toBe(4);
+    });
+
+    it("shift acts like Array.prototype.shift", function () {
+        S.event(function () {
+            expect(a.shift()).toBe(1);
+            expect(a.shift()).toBe(2);
+            expect(a.shift()).toBe(3);
+            expect(a.shift()).toBe(undefined);
+            expect(a.shift()).toBe(undefined);
+            expect(a()).toEqual([1, 2, 3]);
+            expect(l()).toBe(3);
+        });
+        expect(a()).toEqual([]);
+        expect(l()).toBe(0);
+    });
+
+    it("splice acts like Array.prototype.splice", function () {
+        S.event(function () {
+            expect(a.splice(1, 1, 4, 5)).toBe(a);
+            expect(a()).toEqual([1, 2, 3]);
+            expect(l()).toBe(3);
+        });
+        expect(a()).toEqual([1, 4, 5, 3]);
+        expect(l()).toBe(4);
+    });
+
+    it("remove removes the first occurence of the item", function () {
+        S.event(function () {
+            a.push(1);
+            expect(a.remove(1)).toBe(a);
+            expect(a()).toEqual([1, 2, 3]);
+            expect(l()).toBe(3);
+        });
+        expect(a()).toEqual([2, 3, 1]);
+        expect(l()).toBe(3);
+    });
+
+    it("removeAll removes all occurence of the item", function () {
+        S.event(function () {
+            a.push(1);
+            expect(a.removeAll(1)).toBe(a);
+            expect(a()).toEqual([1, 2, 3]);
+            expect(l()).toBe(3);
+        });
+        expect(a()).toEqual([2, 3]);
+        expect(l()).toBe(2);
+    });
+});
+
 describe("S.array.concat", function () {
     var a1, a2, a3;
 

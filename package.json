@@ -2,7 +2,7 @@
   "name": "S-array",
   "version": "0.0.1",
   "description": "Array library for S.js",
-  "main": "src/S.array.js",
+  "main": "S.array.js",
   "dependencies": {
   },
   "devDependencies": {
