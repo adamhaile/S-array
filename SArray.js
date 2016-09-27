@@ -1,17 +1,20 @@
-/* globals define */
-// sets, unordered and ordered, for S.js
+// synchronous array signals for S.js
 (function (package) {
-    if (typeof exports === 'object')
-        package(require('S')); // CommonJS
-    else if (typeof define === 'function')
+    if (typeof exports === 'object' && exports.__esModule) {
+        exports.default = package(require(S)); // ES6 to CommonJS
+    } else if (typeof module === 'object' && typeof module.exports === 'object') {
+        module.exports = package(require(S)); // CommonJS
+    } else if (typeof define === 'function') {
         define(['S'], package); // AMD
-    else package(S); // globals
+    } else {
+        (eval || function () {})("this").SArray = package(S); // globals
+    }
 })(function (S) {
     "use strict";
 
-    S.array = array;
+    return SArray;
 
-    function array(values) {
+    function SArray(values) {
         if (!Array.isArray(values))
             throw new Error("S.array must be initialized with an array");
 

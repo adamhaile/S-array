@@ -12,7 +12,7 @@ export interface SArray<T> {
     every(pred : (v : T) => boolean) : () => boolean;
     filter(pred : (v : T) => boolean) : SArray<T>;
     find(pred : (v : T) => boolean) : () => T;
-    forEach(fn : (v : T) => void, exit? : (v : T, i : number) => void, move? : (from : number[], to : number[]) => void) : void;
+    forEach(fn : (v : T) => void, exit? : (v : T, i : number) => void, move? : (from : number[], to : number[]) => void) : SArray<T>;
     includes(v : T) : () => boolean;
     map<U>(fn : (v : T) => U, exit? : (v : T, i : number) => void, move? : (from : number[], to : number[]) => void) : SArray<U>;
     sort(fn : (a : T, b : T) => number) : SArray<T>;
