@@ -1,11 +1,11 @@
 // synchronous array signals for S.js
 (function (package) {
     if (typeof exports === 'object' && exports.__esModule) {
-        exports.default = package(require(S)); // ES6 to CommonJS
+        exports.default = package(require('./S')); // ES6 to CommonJS
     } else if (typeof module === 'object' && typeof module.exports === 'object') {
-        module.exports = package(require(S)); // CommonJS
+        module.exports = package(require('./S')); // CommonJS
     } else if (typeof define === 'function') {
-        define(['S'], package); // AMD
+        define(['./S'], package); // AMD
     } else {
         (eval || function () {})("this").SArray = package(S); // globals
     }
@@ -23,7 +23,7 @@
             mutcount  = 0,
             pops      = 0,
             shifts    = 0,
-            data      = S.on(dirty, update, values, true);
+            data      = S.root(function () { return S.on(dirty, update, values, true); });
 
         // add mutators
         array.push      = push;
@@ -152,6 +152,7 @@
 
         // non-ES5 transformers
         s.mapS        = mapS;
+        s.mapSample   = mapSample;
         s.combine     = combine;
         s.orderBy     = orderBy;
 
@@ -165,9 +166,73 @@
         var seq = this,
             items = [],
             mapped = [],
+            disposers = enter ? [] : null,
             len = 0;
 
+        if (enter) S(function () { S.cleanup(function () { disposers.forEach(function (d) { d(); }); }); });
+
         var mapS = S(function mapS() {
+            var new_items = seq(),
+                new_len = new_items.length,
+                temp = new Array(new_len),
+                tempdisposers = enter ? new Array(new_len) : null,
+                from, to, i, j, k, item;
+
+            if (move) from = [], to = [];
+
+            // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
+            NEXT:
+            for (i = 0, k = 0; i < len; i++) {
+                item = items[i];
+                for (j = 0; j < new_len; j++, k = (k + 1) % new_len) {
+                    if (item === new_items[k] && !temp.hasOwnProperty(k)) {
+                        temp[k] = mapped[i];
+                        if (enter) tempdisposers[k] = disposers[i];
+                        if (move && i !== k) { from.push(i); to.push(k); }
+                        k = (k + 1) % new_len;
+                        continue NEXT;
+                    }
+                }
+                if (exit) S.sample(function () { exit(item, enter ? mapped[i]() : mapped[i], i); });
+                if (enter) disposers[i]();
+            }
+
+            if (move && from.length) S.sample(function () { move(items, mapped, from, to); });
+
+            // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
+            for (i = 0; i < new_len; i++) {
+                if (temp.hasOwnProperty(i)) {
+                    mapped[i] = temp[i];
+                    if (enter) disposers[i] = tempdisposers[i];
+                } else {
+                    item = new_items[i];
+                    mapped[i] = !enter ? item : S.root(function (disposer) {
+                        disposers[i] = disposer;
+                        var _item = item, _i = i;
+                        return S(function (value) { return enter(_item, value, _i); });
+                    }); 
+                }
+            }
+
+            // 3) in case the new set is shorter than the old, set the length of the mapped array
+            len = mapped.length = new_len;
+
+            // 4) save a copy of the mapped items for the next update
+            items = new_items.slice();
+
+            return mapped;
+        });
+
+        return transformer(mapS);
+    }
+    
+    function mapSample(enter, exit, move) {
+        var seq = this,
+            items = [],
+            mapped = [],
+            len = 0;
+
+        return transformer(S.on(seq, function mapSample() {
             var new_items = seq(),
                 new_len = new_items.length,
                 temp = new Array(new_len),
@@ -187,25 +252,19 @@
                         continue NEXT;
                     }
                 }
-                if (exit) S.sample(function () { exit(item, enter ? mapped[i]() : mapped[i], i); });
-                if (enter) S.dispose(mapped[i]);
+                if (exit) exit(item, mapped[i], i);
             }
 
-            if (move && from.length) S.sample(function () { move(items, mapped, from, to); });
+            if (move && from.length) move(items, mapped, from, to);
 
             // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
             for (i = 0; i < new_len; i++) {
                 if (temp.hasOwnProperty(i)) {
                     mapped[i] = temp[i];
                 } else {
-                    item = new_items[i];
-                    mapped[i] = enter ? (function (item, value, i) { 
-                        return S.orphan().S(function () { return value = enter(item, value, i); }); 
-                    })(item, undefined, i) : item;
+                    mapped[i] = enter(new_items[i], i);
                 }
             }
-            
-            S.cleanup(function (final) { if (final && enter) mapped.map(S.dispose); });
 
             // 3) in case the new set is shorter than the old, set the length of the mapped array
             len = mapped.length = new_len;
@@ -214,11 +273,9 @@
             items = new_items.slice();
 
             return mapped;
-        });
-
-        return transformer(mapS);
+        }));
     }
-    
+
     function forEach(enter, exit, move) {
         var seq = this,
             items = [],

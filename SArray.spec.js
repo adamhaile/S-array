@@ -18,7 +18,7 @@ describe("SArray mutator", function () {
 
     beforeEach(function () {
         a = SArray([1, 2, 3]);
-        l = S(function () { return a().length; });
+        l = S.root(function () { return S(function () { return a().length; }); });
     });
 
     it("push acts like Array.prototype.push", function () {
@@ -71,7 +71,7 @@ describe("(in event) SArray mutator", function () {
 
     beforeEach(function () {
         a = SArray([1, 2, 3]);
-        l = S(function () { return a().length; });
+        l = S.root(function () { return S(function () { return a().length; }); });
     });
 
     it("push acts like Array.prototype.push", function () {
@@ -165,84 +165,102 @@ describe("SArray.concat", function () {
     });
 
     it("combines all passed SArrays in order", function () {
-        var s = a1.concat(a2, a3);
+        S.root(function () {
+            var s = a1.concat(a2, a3);
 
-        expect(s()).toEqual([1, 2, 3]);
+            expect(s()).toEqual([1, 2, 3]);
+        });
     });
 
     it("responds to changes in all arrays", function () {
-        var s = a1.concat(a2, a3);
+        S.root(function () {
+            var s = a1.concat(a2, a3);
 
-        expect(s()).toEqual([1, 2, 3]);
-        a1.push(4);
-        expect(s()).toEqual([1, 4, 2, 3]);
-        a2.pop();
-        expect(s()).toEqual([1, 4, 3]);
-        a3([5, 6]);
-        expect(s()).toEqual([1, 4, 5, 6]);
+            expect(s()).toEqual([1, 2, 3]);
+            a1.push(4);
+            expect(s()).toEqual([1, 4, 2, 3]);
+            a2.pop();
+            expect(s()).toEqual([1, 4, 3]);
+            a3([5, 6]);
+            expect(s()).toEqual([1, 4, 5, 6]);
+        });
     });
 });
 
 describe("SArray.every", function () {
     it("behaves like Array.prototype.every", function () {
-        var a = SArray([1, 3, 2]);
-        expect(a.every(function (v) { return v > 0; })()).toBe(true);
-        expect(a.every(function (v) { return v > 1; })()).toBe(false);
+        S.root(function () {
+            var a = SArray([1, 3, 2]);
+            expect(a.every(function (v) { return v > 0; })()).toBe(true);
+            expect(a.every(function (v) { return v > 1; })()).toBe(false);
+        });
     });
 
     it("is true for an empty array", function () {
-        var s = SArray([]).every(function () { return false; });
-        expect(s()).toBe(true);
+        S.root(function () {
+            var s = SArray([]).every(function () { return false; });
+            expect(s()).toBe(true);
+        });
     });
 
     it("responds to changes in source", function () {
-        var a = SArray([2, 3, 1]),
-            s = a.every(function (v) { return v > 1; });
+        S.root(function () {
+            var a = SArray([2, 3, 1]),
+                s = a.every(function (v) { return v > 1; });
 
-        expect(s()).toBe(false);
-        a.pop();
-        expect(s()).toBe(true);
-        a.push(0);
-        expect(s()).toBe(false);
+            expect(s()).toBe(false);
+            a.pop();
+            expect(s()).toBe(true);
+            a.push(0);
+            expect(s()).toBe(false);
+        });
     });
 });
 
 describe("SArray.filter", function () {
     it("behaves like Array.prototype.filter", function () {
-        var a = SArray([1, 3, 2]);
-        expect(a.filter(function (v) { return v > 0; })()).toEqual([1, 3, 2]);
-        expect(a.filter(function (v) { return v > 1; })()).toEqual([3, 2]);
+        S.root(function () {
+            var a = SArray([1, 3, 2]);
+            expect(a.filter(function (v) { return v > 0; })()).toEqual([1, 3, 2]);
+            expect(a.filter(function (v) { return v > 1; })()).toEqual([3, 2]);
+        });
     });
 
     it("responds to changes in source", function () {
-        var a = SArray([2, 3, 1]),
-        s = a.filter(function (v) { return v > 1; });
+        S.root(function () {
+            var a = SArray([2, 3, 1]),
+            s = a.filter(function (v) { return v > 1; });
 
-        expect(s()).toEqual([2, 3]);
-        a.shift();
-        expect(s()).toEqual([3]);
-        a.push(4);
-        expect(s()).toEqual([3, 4]);
+            expect(s()).toEqual([2, 3]);
+            a.shift();
+            expect(s()).toEqual([3]);
+            a.push(4);
+            expect(s()).toEqual([3, 4]);
+        });
     });
 });
 
 describe("SArray.find", function () {
     it("behaves like Array.prototype.find", function () {
-        var a = SArray([1, 3, 2]);
-        expect(a.find(function (v) { return v > 0; })()).toEqual(1);
-        expect(a.find(function (v) { return v > 1; })()).toEqual(3);
-        expect(a.find(function (v) { return v > 4; })()).toBeUndefined();
+        S.root(function () {
+            var a = SArray([1, 3, 2]);
+            expect(a.find(function (v) { return v > 0; })()).toEqual(1);
+            expect(a.find(function (v) { return v > 1; })()).toEqual(3);
+            expect(a.find(function (v) { return v > 4; })()).toBeUndefined();
+        });
     });
 
     it("responds to changes in source", function () {
-        var a = SArray([2, 3]),
-        s = a.find(function (v) { return v > 2; });
+        S.root(function () {
+            var a = SArray([2, 3]),
+            s = a.find(function (v) { return v > 2; });
 
-        expect(s()).toEqual(3);
-        a.shift();
-        expect(s()).toEqual(3);
-        a.push(4);
-        expect(s()).toEqual(3);
+            expect(s()).toEqual(3);
+            a.shift();
+            expect(s()).toEqual(3);
+            a.push(4);
+            expect(s()).toEqual(3);
+        });
     });
 });
 
@@ -254,69 +272,85 @@ describe("SArray.forEach", function () {
     });
 
     it("behaves like Array.prototype.forEach", function () {
-        var r = "";
-        a.forEach(function (v) { r += v; });
-        expect(r).toEqual("abc");
+        S.root(function () {
+            var r = "";
+            a.forEach(function (v) { r += v; });
+            expect(r).toEqual("abc");
+        });
     });
 
     it("tracks changes in source", function () {
-        var r = "";
-        a.forEach(function (v) { r += v; });
-        a.unshift("d");
-        expect(r).toEqual("abcd");
+        S.root(function () {
+            var r = "";
+            a.forEach(function (v) { r += v; });
+            a.unshift("d");
+            expect(r).toEqual("abcd");
+        });
     });
 
     it("ignores prior items", function () {
-        var enter = jasmine.createSpy();
-        a.forEach(enter);
-        enter.calls.reset();
-        a.unshift("d");
-        expect(enter.calls.count()).toBe(1);
-        expect(enter).toHaveBeenCalledWith("d", 0);
+        S.root(function () {
+            var enter = jasmine.createSpy();
+            a.forEach(enter);
+            enter.calls.reset();
+            a.unshift("d");
+            expect(enter.calls.count()).toBe(1);
+            expect(enter).toHaveBeenCalledWith("d", 0);
+        });
     });
 
     it("reports when a value exits the array", function () {
-        var exit = jasmine.createSpy();
-        a.forEach(null, exit);
-        a.pop();
-        expect(exit.calls.count()).toBe(1);
-        expect(exit).toHaveBeenCalledWith("c", 2);
+        S.root(function () {
+            var exit = jasmine.createSpy();
+            a.forEach(null, exit);
+            a.pop();
+            expect(exit.calls.count()).toBe(1);
+            expect(exit).toHaveBeenCalledWith("c", 2);
+        });
     });
 
     it("reports when a value moves in the array", function () {
-        var move = jasmine.createSpy();
-        a.forEach(null, null, move);
-        a(["a", "c", "b"]);
-        expect(move.calls.count()).toBe(1);
-        expect(move).toHaveBeenCalledWith([1, 2], [2, 1]);
+        S.root(function () {
+            var move = jasmine.createSpy();
+            a.forEach(null, null, move);
+            a(["a", "c", "b"]);
+            expect(move.calls.count()).toBe(1);
+            expect(move).toHaveBeenCalledWith([1, 2], [2, 1]);
+        });
     });
 
     it("ignores changes to other dependencies", function () {
-        var d = S.data(1),
-	        enter = jasmine.createSpy();
-        a.forEach(function (v) { d(); enter(); });
-        enter.calls.reset();
-        d(2);
-        expect(enter.calls.count()).toBe(0);
+        S.root(function () {
+            var d = S.data(1),
+                enter = jasmine.createSpy();
+            a.forEach(function (v) { d(); enter(); });
+            enter.calls.reset();
+            d(2);
+            expect(enter.calls.count()).toBe(0);
+        });
     });
 });
 
 describe("SArray.includes", function () {
     it("behaves like Array.prototype.includes", function () {
-        var a = SArray([1, 3, 2]);
-        expect(a.includes(3)()).toBe(true);
-        expect(a.includes(4)()).toBe(false);
+        S.root(function () {
+            var a = SArray([1, 3, 2]);
+            expect(a.includes(3)()).toBe(true);
+            expect(a.includes(4)()).toBe(false);
+        });
     });
 
     it("responds to changes in source", function () {
-        var a = SArray([2, 3, 1]),
-            s = a.includes(2);
+        S.root(function () {
+            var a = SArray([2, 3, 1]),
+                s = a.includes(2);
 
-        expect(s()).toBe(true);
-        a.shift();
-        expect(s()).toBe(false);
-        a.push(2);
-        expect(s()).toBe(true);
+            expect(s()).toBe(true);
+            a.shift();
+            expect(s()).toBe(false);
+            a.push(2);
+            expect(s()).toBe(true);
+        });
     });
 });
 
@@ -328,45 +362,57 @@ describe("SArray.map", function () {
     });
 
     it("behaves like Array.prototype.map", function () {
-        var s = a.map(function (x) { return x * 2; });
-        expect(s()).toEqual([2, 6, 4]);
+        S.root(function () {
+            var s = a.map(function (x) { return x * 2; });
+            expect(s()).toEqual([2, 6, 4]);
+        });
     });
 
     it("tracks changes in source", function () {
-        var s = a.map(function (x) { return x * 2; });
-        a.push(4);
-        expect(s()).toEqual([2, 6, 4, 8]);
+        S.root(function () {
+            var s = a.map(function (x) { return x * 2; });
+            a.push(4);
+            expect(s()).toEqual([2, 6, 4, 8]);
+        });
     });
 
     it("preserves prior computations", function () {
-        var s = a.map(function (x) { return Math.random(); }),
-            pre = s().slice();
-        a.push(4);
-        expect(pre).toEqual(s().slice(0, -1));
+        S.root(function () {
+            var s = a.map(function (x) { return Math.random(); }),
+                pre = s().slice();
+            a.push(4);
+            expect(pre).toEqual(s().slice(0, -1));
+        });
     });
 
     it("reports when a value exits the array", function () {
-        var exit = jasmine.createSpy();
-        a.map(null, exit);
-        a.pop();
-        expect(exit).toHaveBeenCalledWith(2, 2, 2);
+        S.root(function () {
+            var exit = jasmine.createSpy();
+            a.map(null, exit);
+            a.pop();
+            expect(exit).toHaveBeenCalledWith(2, 2, 2);
+        });
     });
 
     it("reports when a value moves in the array", function () {
-        var move = jasmine.createSpy();
-        a.map(null, null, move);
-        a([1, 2, 3]);
-        expect(move).toHaveBeenCalledWith([1, 3, 2], [1, 3, 2], [1, 2], [2, 1]);
+        S.root(function () {
+            var move = jasmine.createSpy();
+            a.map(null, null, move);
+            a([1, 2, 3]);
+            expect(move).toHaveBeenCalledWith([1, 3, 2], [1, 3, 2], [1, 2], [2, 1]);
+        });
     });
 
     it("tracks changes to other dependencies", function () {
-        var d = S.data(1),
-            s = a.map(function (v) { return v + d(); });
-        expect(s()).toEqual([2, 4, 3]);
-        d(2);
-        expect(s()).toEqual([3, 5, 4]);
-        a.push(4);
-        expect(s()).toEqual([3, 5, 4, 6]);
+        S.root(function () {
+            var d = S.data(1),
+                s = a.map(function (v) { return v + d(); });
+            expect(s()).toEqual([2, 4, 3]);
+            d(2);
+            expect(s()).toEqual([3, 5, 4]);
+            a.push(4);
+            expect(s()).toEqual([3, 5, 4, 6]);
+        });
     });
 });
 
@@ -379,119 +425,149 @@ describe("SArray.sort", function () {
     });
 
     it("behaves like Array.prototype.sort", function () {
-        var s = a.sort();
-        expect(s()).toEqual([1, 2, 3]);
+        S.root(function () {
+            var s = a.sort();
+            expect(s()).toEqual([1, 2, 3]);
+        });
     });
 
     it("tracks changes in source", function () {
-        var s = a.sort();
-        a.push(0);
-        expect(s()).toEqual([0, 1, 2, 3]);
+        S.root(function () {
+            var s = a.sort();
+            a.push(0);
+            expect(s()).toEqual([0, 1, 2, 3]);
+        });
     });
 
     it("can sort by a comparator function", function () {
-        var s = a.sort(function (a, b) { return b - a; });
-        expect(s()).toEqual([3, 2, 1]);
+        S.root(function () {
+            var s = a.sort(function (a, b) { return b - a; });
+            expect(s()).toEqual([3, 2, 1]);
+        });
     });
 });
 
 describe("SArray.reduce", function () {
     it("behaves like Array.prototype.forEach", function () {
-        var a = SArray(["a", "b", "c"]),
-            s = a.reduce(function (a, v) { return a + v; }, "");
-        expect(s()).toEqual("abc");
+        S.root(function () {
+            var a = SArray(["a", "b", "c"]),
+                s = a.reduce(function (a, v) { return a + v; }, "");
+            expect(s()).toEqual("abc");
+        });
     });
 
     it("tracks changes in source", function () {
-        var a = SArray(["a", "b", "c"]),
-            s = a.reduce(function (a, v) { return a + v; }, "");
-        a.push("d");
-        expect(s()).toEqual("abcd");
-        a.shift();
-        expect(s()).toEqual("bcd");
+        S.root(function () {
+            var a = SArray(["a", "b", "c"]),
+                s = a.reduce(function (a, v) { return a + v; }, "");
+            a.push("d");
+            expect(s()).toEqual("abcd");
+            a.shift();
+            expect(s()).toEqual("bcd");
+        });
     });
 });
 
 describe("SArray.reduceRight", function () {
     it("behaves like Array.prototype.forEach", function () {
-        var a = SArray(["a", "b", "c"]),
-            s = a.reduceRight(function (a, v) { return a + v; }, "");
-        expect(s()).toEqual("cba");
+        S.root(function () {
+            var a = SArray(["a", "b", "c"]),
+                s = a.reduceRight(function (a, v) { return a + v; }, "");
+            expect(s()).toEqual("cba");
+        });
     });
 
     it("tracks changes in source", function () {
-        var a = SArray(["a", "b", "c"]),
-            s = a.reduceRight(function (a, v) { return a + v; }, "");
-        a.push("d");
-        expect(s()).toEqual("dcba");
-        a.shift();
-        expect(s()).toEqual("dcb");
+        S.root(function () {
+            var a = SArray(["a", "b", "c"]),
+                s = a.reduceRight(function (a, v) { return a + v; }, "");
+            a.push("d");
+            expect(s()).toEqual("dcba");
+            a.shift();
+            expect(s()).toEqual("dcb");
+        });
     });
 });
 
 describe("SArray.reverse", function () {
     it("behaves like Array.prototype.reverse", function () {
-        var a = SArray(["a", "b", "c"]),
-            s = a.reverse();
-        expect(s()).toEqual(["c", "b", "a"]);
+        S.root(function () {
+            var a = SArray(["a", "b", "c"]),
+                s = a.reverse();
+            expect(s()).toEqual(["c", "b", "a"]);
+        });
     });
 
     it("tracks changes in source", function () {
-        var a = SArray(["a", "b", "c"]),
-            s = a.reverse();
-        a.push("d");
-        expect(s()).toEqual(["d", "c", "b", "a"]);
-        a.shift();
-        expect(s()).toEqual(["d", "c", "b"]);
+        S.root(function () {
+            var a = SArray(["a", "b", "c"]),
+                s = a.reverse();
+            a.push("d");
+            expect(s()).toEqual(["d", "c", "b", "a"]);
+            a.shift();
+            expect(s()).toEqual(["d", "c", "b"]);
+        });
     });
 });
 
 describe("SArray.slice", function () {
     it("behaves like Array.prototype.slice", function () {
-        var a = SArray(["a", "b", "c", "d", "e", "f", "g", "h"]);
-        expect(a.slice(0, 4)()).toEqual(["a", "b", "c", "d"]);
-        expect(a.slice(3, 7)()).toEqual(["d", "e", "f", "g"]);
+        S.root(function () {
+            var a = SArray(["a", "b", "c", "d", "e", "f", "g", "h"]);
+            expect(a.slice(0, 4)()).toEqual(["a", "b", "c", "d"]);
+            expect(a.slice(3, 7)()).toEqual(["d", "e", "f", "g"]);
+        });
     });
 
     it("tracks changes in source", function () {
-        var a = SArray(["a", "b", "c", "d", "e", "f", "g", "h"]),
-            s = a.slice(1, 4);
-        a.unshift("d");
-        expect(s()).toEqual(["a", "b", "c"]);
-        a.shift();
-        expect(s()).toEqual(["b", "c", "d"]);
+        S.root(function () {
+            var a = SArray(["a", "b", "c", "d", "e", "f", "g", "h"]),
+                s = a.slice(1, 4);
+            a.unshift("d");
+            expect(s()).toEqual(["a", "b", "c"]);
+            a.shift();
+            expect(s()).toEqual(["b", "c", "d"]);
+        });
     });
 });
 
 describe("SArray.some", function () {
     it("behaves like Array.prototype.some", function () {
-        var a = SArray([1, 3, 2]);
-        expect(a.some(function (v) { return v > 2; })()).toBe(true);
-        expect(a.some(function (v) { return v > 3; })()).toBe(false);
+        S.root(function () {
+            var a = SArray([1, 3, 2]);
+            expect(a.some(function (v) { return v > 2; })()).toBe(true);
+            expect(a.some(function (v) { return v > 3; })()).toBe(false);
+        });
     });
 
     it("is false for an empty array", function () {
-        var s = SArray([]).some(function () { return false; });
-        expect(s()).toBe(false);
+        S.root(function () {
+            var s = SArray([]).some(function () { return false; });
+            expect(s()).toBe(false);
+        });
     });
 
     it("responds to changes in source", function () {
-        var a = SArray([2, 3, 1]),
-            s = a.some(function (v) { return v > 2; });
+        S.root(function () {
+            var a = SArray([2, 3, 1]),
+                s = a.some(function (v) { return v > 2; });
 
-        expect(s()).toBe(true);
-        a.splice(1, 1);
-        expect(s()).toBe(false);
-        a.push(4);
-        expect(s()).toBe(true);
+            expect(s()).toBe(true);
+            a.splice(1, 1);
+            expect(s()).toBe(false);
+            a.push(4);
+            expect(s()).toBe(true);
+        });
     });
 });
 
 describe("SArray.combine", function () {
     it("combines an array signal of signals to an array signal of values", function () {
-        var a = SArray([S.data("a"), S.data("b"), S.data("c")]),
-            s = a.combine();
-        expect(s()).toEqual(["a", "b", "c"]);
+        S.root(function () {
+            var a = SArray([S.data("a"), S.data("b"), S.data("c")]),
+                s = a.combine();
+            expect(s()).toEqual(["a", "b", "c"]);
+        });
     })
 });
 
@@ -504,18 +580,24 @@ describe("SArray.orderBy", function () {
     });
 
     it("can sort using a getter function", function () {
-        var s = a.orderBy(function (v) { return -v; });
-        expect(s()).toEqual([3, 2, 1]);
+        S.root(function () {
+            var s = a.orderBy(function (v) { return -v; });
+            expect(s()).toEqual([3, 2, 1]);
+        });
     });
 
     it("can sort using a property name", function () {
-        var s = b.orderBy('length');
-        expect(s()).toEqual(["a", "cc", "bbb"]);
+        S.root(function () {
+            var s = b.orderBy('length');
+            expect(s()).toEqual(["a", "cc", "bbb"]);
+        });
     });
 
     it("tracks changes in source", function () {
-        var s = a.orderBy(function (v) { return -v; });
-        a.push(0);
-        expect(s()).toEqual([3, 2, 1, 0]);
+        S.root(function () {
+            var s = a.orderBy(function (v) { return -v; });
+            a.push(0);
+            expect(s()).toEqual([3, 2, 1, 0]);
+        });
     });
 });

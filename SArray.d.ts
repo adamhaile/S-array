@@ -23,6 +23,7 @@ export interface SArray<T> {
     some(pred : (v : T) => boolean) : () => boolean;
 
     mapS<U>(fn : (v : T) => U) : SSignalArray<U>;
+    mapSample<U>(fn : (v : T) => U, exit? : (v : T, i : number) => void, move? : (from : number[], to : number[]) => void) : SArray<U>;
     orderBy<U>(key : (v : T) => U) : SArray<T>;
 }
 
