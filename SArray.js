@@ -12,6 +12,8 @@
 })(function (S) {
     "use strict";
 
+    SArray.Lift = lift;
+
     return SArray;
 
     function SArray(values) {
@@ -128,6 +130,11 @@
             });
             return array;
         }
+    }
+
+    // util to convert plain () => T[] signal into an SArray<T>
+    function lift(s) {
+        return transformer(function () { return s(); });
     }
 
     // util to add transformer methods
@@ -340,13 +347,17 @@
     }
 
     function map(enter, exit, move) {
+        if (enter && move) {
+            var _move = move;
+            move = function (items, mapped, from, to) { _move(items, mapped.map(function (s) { return s(); }), from, to); };
+        }
         var mapS = this.mapS(enter, exit, move);
         return enter ? mapS.combine() : mapS;
     }
 
     function find(pred) {
         var seq = this;
-        return transformer(S(function find() {
+        return S(function find() {
             var s = seq(),
                 i, item;
             for (i = 0; i < s.length; i++) {
@@ -354,18 +365,18 @@
                 if (pred(item)) return item;
             }
             return undefined;
-        }));
+        });
     }
 
     function includes(o) {
         var seq = this;
-        return transformer(S(function find() {
+        return S(function find() {
             var s = seq();
             for (var i = 0; i < s.length; i++) {
                 if (s[i] === o) return true;
             }
             return false;
-        }));
+        });
     }
 
     function sort(fn) {
@@ -428,49 +439,49 @@
 
     function reduce(fn, seed) {
         var seq = this;
-        return transformer(S(function reduce() {
+        return S(function reduce() {
             var s = seq(),
-                result = seed;
+                result = seed instanceof Function ? seed() : seed;
             for (var i = 0; i < s.length; i++) {
                 result = fn(result, s[i], i, s);
             }
             return result;
-        }));
+        });
     }
 
     function reduceRight(fn, seed) {
         var seq = this;
-        return transformer(S(function reduceRight() {
+        return S(function reduceRight() {
             var s = seq(),
-                result = seed;
+                result = seed instanceof Function ? seed() : seed;
             for (var i = s.length - 1; i >= 0; i--) {
                 result = fn(result, s[i], i, s);
             }
             return result;
-        }));
+        });
     }
 
     function every(fn) {
         var seq = this;
-        return transformer(S(function every() {
+        return S(function every() {
             var s = seq();
             for (var i = 0; i < s.length; i++) {
                 if (!fn(s[i])) return false;
             }
             return true;
-        }));
+        });
     }
 
     function some(fn) {
         var seq = this;
-        return transformer(S(function some() {
+        return S(function some() {
             var s = seq();
             if (fn === undefined) return s.length !== 0;
             for (var i = 0; i < s.length; i++) {
                 if (fn(s[i])) return true;
             }
             return false;
-        }));
+        });
     }
 
     function reverse() {

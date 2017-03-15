@@ -459,7 +459,7 @@ describe("SArray.reduce", function () {
     it("tracks changes in source", function () {
         S.root(function () {
             var a = SArray(["a", "b", "c"]),
-                s = a.reduce(function (a, v) { return a + v; }, "");
+                s = a.reduce(function (a, v) { return a + v; }, function () { return ""; });
             a.push("d");
             expect(s()).toEqual("abcd");
             a.shift();
@@ -480,7 +480,7 @@ describe("SArray.reduceRight", function () {
     it("tracks changes in source", function () {
         S.root(function () {
             var a = SArray(["a", "b", "c"]),
-                s = a.reduceRight(function (a, v) { return a + v; }, "");
+                s = a.reduceRight(function (a, v) { return a + v; }, function () { return ""; });
             a.push("d");
             expect(s()).toEqual("dcba");
             a.shift();
