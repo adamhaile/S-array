@@ -1,11 +1,11 @@
 // synchronous array signals for S.js
 (function (package) {
     if (typeof exports === 'object' && exports.__esModule) {
-        exports.default = package(require('./S')); // ES6 to CommonJS
+        exports.default = package(require('s-js')); // ES6 to CommonJS
     } else if (typeof module === 'object' && typeof module.exports === 'object') {
-        module.exports = package(require('./S')); // CommonJS
+        module.exports = package(require('s-js')); // CommonJS
     } else if (typeof define === 'function') {
-        define(['./S'], package); // AMD
+        define(['s-js'], package); // AMD
     } else {
         (eval || function () {})("this").SArray = package(S); // globals
     }

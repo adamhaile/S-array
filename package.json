@@ -1,9 +1,10 @@
 {
   "name": "s-array",
-  "version": "0.0.1",
+  "version": "0.4.0",
   "description": "Array library for S.js",
   "main": "SArray.js",
   "dependencies": {
+    "s-js": "../S"
   },
   "devDependencies": {
       "jasmine-core": "^2.2.0",
