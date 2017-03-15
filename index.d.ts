@@ -1,6 +1,6 @@
 declare var SArray : {
 	<T>(v : T[]) : SDataArray<T>;
-    Lift<T>(a : () => T[]) : SArray<T>;
+    lift<T>(a : () => T[]) : SArray<T>;
 }
 
 export = SArray;

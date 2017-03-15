@@ -12,13 +12,13 @@
 })(function (S) {
     "use strict";
 
-    SArray.Lift = lift;
+    SArray.lift = lift;
 
     return SArray;
 
     function SArray(values) {
         if (!Array.isArray(values))
-            throw new Error("S.array must be initialized with an array");
+            throw new Error("SArray must be initialized with an array");
 
         var dirty     = S.data(false),
             mutations = [],
