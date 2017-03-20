@@ -237,12 +237,16 @@
         var seq = this,
             items = [],
             mapped = [],
+            disposers = enter ? [] : null,
             len = 0;
+
+        if (enter) S(function () { S.cleanup(function () { disposers.forEach(function (d) { d(); }); }); });
 
         return transformer(S.on(seq, function mapSample() {
             var new_items = seq(),
                 new_len = new_items.length,
                 temp = new Array(new_len),
+                tempdisposers = enter ? new Array(new_len) : null,
                 from, to, i, j, k, item;
 
             if (move) from = [], to = [];
@@ -254,12 +258,14 @@
                 for (j = 0; j < new_len; j++, k = (k + 1) % new_len) {
                     if (item === new_items[k] && !temp.hasOwnProperty(k)) {
                         temp[k] = mapped[i];
+                        if (enter) tempdisposers[k] = disposers[i];
                         if (move && i !== k) { from.push(i); to.push(k); }
                         k = (k + 1) % new_len;
                         continue NEXT;
                     }
                 }
                 if (exit) exit(item, mapped[i], i);
+                if (enter) disposers[i]();
             }
 
             if (move && from.length) move(items, mapped, from, to);
@@ -268,8 +274,12 @@
             for (i = 0; i < new_len; i++) {
                 if (temp.hasOwnProperty(i)) {
                     mapped[i] = temp[i];
+                    if (enter) disposers[i] = tempdisposers[i];
                 } else {
-                    mapped[i] = enter(new_items[i], i);
+                    mapped[i] = !enter ? item : S.root(function (disposer) {
+                        disposers[i] = disposer;
+                        return enter(new_items[i], i);
+                    }); 
                 }
             }
 
