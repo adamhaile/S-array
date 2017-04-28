@@ -245,51 +245,89 @@
         return transformer(S.on(seq, function mapSample() {
             var new_items = seq(),
                 new_len = new_items.length,
-                temp = new Array(new_len),
-                tempdisposers = enter ? new Array(new_len) : null,
+                temp,
+                tempdisposers,
                 from, to, i, j, k, item;
 
-            if (move) from = [], to = [];
+            // fast path for empty arrays
+            if (new_len === 0) {
+                if (len !== 0) {
+                    if (enter) {
+                        if (exit) {
+                            for (i = 0; i < len; i++) {
+                                item = items[i];
+                                exit(item, mapped[i], i);
+                                disposers[i]();
+                            }
+                        } else {
+                            for (i = 0; i < len; i++)
+                                disposers[items[i]]();
+                        }
+                    } else if (exit) {
+                        for (i = 0; i < len; i++)
+                            exit(items[i], mapped[i], i);
+                    }
+                    items = mapped = [];
+                    disposers = [];
+                    len = 0;
+                }
+            } else if (len === 0) {
+                if (enter) {
+                    for (i = 0; i < new_len; i++) {
+                        item = items[i] = new_items[i];
+                        mapped[i] = S.root(mapper);
+                    }
+                } else {
+                    items = mapped = new_items.slice(0);
+                }
+                len = new_len;
+            } else {
+                temp = new Array(new_len);
+                tempdisposers = enter ? new Array(new_len) : null;
+                if (move) from = [], to = [];
 
-            // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
-            NEXT:
-            for (i = 0, k = 0; i < len; i++) {
-                item = items[i];
-                for (j = 0; j < new_len; j++, k = (k + 1) % new_len) {
-                    if (item === new_items[k] && !temp.hasOwnProperty(k)) {
-                        temp[k] = mapped[i];
-                        if (enter) tempdisposers[k] = disposers[i];
-                        if (move && i !== k) { from.push(i); to.push(k); }
-                        k = (k + 1) % new_len;
-                        continue NEXT;
+                // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
+                NEXT:
+                for (i = 0, k = 0; i < len; i++) {
+                    item = items[i];
+                    for (j = 0; j < new_len; j++, k = (k + 1) % new_len) {
+                        if (item === new_items[k] && !temp.hasOwnProperty(k)) {
+                            temp[k] = mapped[i];
+                            if (enter) tempdisposers[k] = disposers[i];
+                            if (move && i !== k) { from.push(i); to.push(k); }
+                            k = (k + 1) % new_len;
+                            continue NEXT;
+                        }
+                    }
+                    if (exit) exit(item, mapped[i], i);
+                    if (enter) disposers[i]();
+                }
+
+                if (move && from.length) move(items, mapped, from, to);
+
+                // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
+                for (i = 0; i < new_len; i++) {
+                    if (temp.hasOwnProperty(i)) {
+                        mapped[i] = temp[i];
+                        if (enter) disposers[i] = tempdisposers[i];
+                    } else {
+                        mapped[i] = !enter ? new_items[i] : S.root(mapper); 
                     }
                 }
-                if (exit) exit(item, mapped[i], i);
-                if (enter) disposers[i]();
+
+                // 3) in case the new set is shorter than the old, set the length of the mapped array
+                len = mapped.length = new_len;
+
+                // 4) save a copy of the mapped items for the next update
+                items = new_items.slice();
             }
-
-            if (move && from.length) move(items, mapped, from, to);
-
-            // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
-            for (i = 0; i < new_len; i++) {
-                if (temp.hasOwnProperty(i)) {
-                    mapped[i] = temp[i];
-                    if (enter) disposers[i] = tempdisposers[i];
-                } else {
-                    mapped[i] = !enter ? item : S.root(function (disposer) {
-                        disposers[i] = disposer;
-                        return enter(new_items[i], i);
-                    }); 
-                }
-            }
-
-            // 3) in case the new set is shorter than the old, set the length of the mapped array
-            len = mapped.length = new_len;
-
-            // 4) save a copy of the mapped items for the next update
-            items = new_items.slice();
 
             return mapped;
+            
+            function mapper(disposer) {
+                disposers[i] = disposer;
+                return enter(new_items[i], i);
+            }
         }));
     }
 
