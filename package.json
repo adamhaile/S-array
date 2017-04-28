@@ -1,6 +1,6 @@
 {
   "name": "s-array",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Array library for S.js",
   "main": "SArray.js",
   "dependencies": {
@@ -21,6 +21,17 @@
     "array",
     "sequence"
   ],
-  "author": "Adam Haile",
+  "repository": { 
+    "type": "git",
+    "url": "https://github.com/adamhaile/S-array.git"
+  },
+  "bugs" :{ 
+    "url": "https://github.com/adamhaile/S-array/issues"
+  },
+  "author": { 
+    "name": "Adam Haile",
+    "email": "adam.haile@gmail.com",
+    "url": "http://heig.ht/"
+  },
   "license": "MIT"
 }
