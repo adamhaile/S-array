@@ -1,6 +1,6 @@
 {
   "name": "s-array",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Array library for S.js",
   "main": "SArray.js",
   "dependencies": {
