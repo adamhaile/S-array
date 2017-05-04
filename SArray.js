@@ -261,7 +261,7 @@
                             }
                         } else {
                             for (i = 0; i < len; i++)
-                                disposers[items[i]]();
+                                disposers[i]();
                         }
                     } else if (exit) {
                         for (i = 0; i < len; i++)
