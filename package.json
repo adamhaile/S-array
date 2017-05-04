@@ -4,7 +4,7 @@
   "description": "Array library for S.js",
   "main": "SArray.js",
   "dependencies": {
-    "s-js": "^0.4.0"
+    "s-js": "^0.4.4"
   },
   "devDependencies": {
       "jasmine-core": "^2.2.0",
