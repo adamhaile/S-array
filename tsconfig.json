@@ -1,0 +1,13 @@
+{
+    "include": [
+        "index.ts"
+    ],
+    "compilerOptions": {
+        "strict": true,
+        "target": "es5",
+        "module": "es6",
+        "outDir": "es",
+        "declaration": true,
+        "moduleResolution": "node"
+    }
+}

@@ -1,3 +1,6 @@
+// by default SArray is loaded into 'default' symbol when module is bound to a global
+SArray = SArray.default;
+
 /* globals describe, expect, beforeEach, jasmine, it, S */
 describe("SArray()", function () {
     it("is created with an array", function () {
@@ -302,7 +305,7 @@ describe("SArray.forEach", function () {
     it("reports when a value exits the array", function () {
         S.root(function () {
             var exit = jasmine.createSpy();
-            a.forEach(null, exit);
+            a.forEach(x => x, exit);
             a.pop();
             expect(exit.calls.count()).toBe(1);
             expect(exit).toHaveBeenCalledWith("c", 2);
@@ -312,7 +315,7 @@ describe("SArray.forEach", function () {
     it("reports when a value moves in the array", function () {
         S.root(function () {
             var move = jasmine.createSpy();
-            a.forEach(null, null, move);
+            a.forEach(x => x, null, move);
             a(["a", "c", "b"]);
             expect(move.calls.count()).toBe(1);
             expect(move).toHaveBeenCalledWith([1, 2], [2, 1]);
@@ -388,7 +391,7 @@ describe("SArray.map", function () {
     it("reports when a value exits the array", function () {
         S.root(function () {
             var exit = jasmine.createSpy();
-            a.map(null, exit);
+            a.map(x => x, exit);
             a.pop();
             expect(exit).toHaveBeenCalledWith(2, 2, 2);
         });
@@ -397,7 +400,7 @@ describe("SArray.map", function () {
     it("reports when a value moves in the array", function () {
         S.root(function () {
             var move = jasmine.createSpy();
-            a.map(null, null, move);
+            a.map(x => x, null, move);
             a([1, 2, 3]);
             expect(move).toHaveBeenCalledWith([1, 3, 2], [1, 3, 2], [1, 2], [2, 1]);
         });
@@ -564,7 +567,7 @@ describe("SArray.some", function () {
 describe("SArray.combine", function () {
     it("combines an array signal of signals to an array signal of values", function () {
         S.root(function () {
-            var a = SArray([S.data("a"), S.data("b"), S.data("c")]),
+            var a = SArray(["a", "b", "c"]).mapS(x => x),
                 s = a.combine();
             expect(s()).toEqual(["a", "b", "c"]);
         });

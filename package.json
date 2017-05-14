@@ -2,17 +2,22 @@
   "name": "s-array",
   "version": "0.4.5",
   "description": "Array library for S.js",
-  "main": "SArray.js",
+  "main": "index.js",
+  "module": "es/index.js",
+  "types": "es/index.d.ts",
   "dependencies": {
-    "s-js": "^0.4.1"
+    "s-js": "../S"
   },
   "devDependencies": {
-      "jasmine-core": "^2.2.0",
-      "karma": "^0.12.31",
-      "karma-jasmine": "^0.3.5",
-      "karma-phantomjs-launcher": "^0.1.4"
+    "jasmine": "^2.6.0",
+    "karma": "^1.7.0",
+    "karma-jasmine": "^1.1.0",
+    "karma-chrome-launcher": "^2.1.1",
+    "rollup": "^0.41.6",
+    "typescript": "^2.3.2"
   },
   "scripts": {
+    "build": "tsc && rollup .\\es\\index.js -f \"umd\" -n \"SArray\" -o .\\index.js",
     "test": "karma start"
   },
   "keywords": [
@@ -21,14 +26,14 @@
     "array",
     "sequence"
   ],
-  "repository": { 
+  "repository": {
     "type": "git",
     "url": "https://github.com/adamhaile/S-array.git"
   },
-  "bugs" :{ 
+  "bugs": {
     "url": "https://github.com/adamhaile/S-array/issues"
   },
-  "author": { 
+  "author": {
     "name": "Adam Haile",
     "email": "adam.haile@gmail.com",
     "url": "http://heig.ht/"
