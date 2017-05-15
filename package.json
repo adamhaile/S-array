@@ -6,7 +6,7 @@
   "module": "es/index.js",
   "types": "es/index.d.ts",
   "dependencies": {
-    "s-js": "../S"
+    "s-js": "^0.4.2"
   },
   "devDependencies": {
     "jasmine": "^2.6.0",
@@ -17,7 +17,7 @@
     "typescript": "^2.3.2"
   },
   "scripts": {
-    "build": "tsc && rollup .\\es\\index.js -f \"umd\" -n \"SArray\" -o .\\index.js",
+    "build": "tsc && rollup -c",
     "test": "karma start"
   },
   "keywords": [
