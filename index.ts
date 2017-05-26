@@ -309,7 +309,8 @@ export function mapSample<T, U>(
                         disposers[i]();
                     }
                 }
-                items = mapped = [];
+                items = [];
+                mapped = [];
                 disposers = [];
                 len = 0;
             }

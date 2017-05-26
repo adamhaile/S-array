@@ -1,6 +1,6 @@
 {
   "name": "s-array",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "Array library for S.js",
   "main": "index.js",
   "module": "es/index.js",

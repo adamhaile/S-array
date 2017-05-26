@@ -205,7 +205,8 @@ function mapSample(seq, enter, exit, move) {
                         disposers[i]();
                     }
                 }
-                items = mapped = [];
+                items = [];
+                mapped = [];
                 disposers = [];
                 len = 0;
             }
