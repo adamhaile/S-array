@@ -5,16 +5,16 @@
   "main": "index.js",
   "module": "es/index.js",
   "types": "es/index.d.ts",
-  "dependencies": {
-    "s-js": "^0.4.2"
+  "peerDependencies": {
+    "s-js": "^0.4.7"
   },
   "devDependencies": {
     "jasmine": "^2.6.0",
     "karma": "^1.7.0",
-    "karma-jasmine": "^1.1.0",
     "karma-chrome-launcher": "^2.1.1",
+    "karma-jasmine": "^1.1.0",
     "rollup": "^0.41.6",
-    "typescript": "^2.3.2"
+    "typescript": "^2.6.1"
   },
   "scripts": {
     "build": "tsc && rollup -c",

@@ -182,7 +182,7 @@ export function mapSample(seq, enter, exit, move) {
     var items = [], mapped = [], disposers = [], len = 0;
     S(function () { S.cleanup(function () { disposers.forEach(function (d) { d(); }); }); });
     return S.on(seq, function mapSample() {
-        var new_items = seq(), new_len = new_items.length, temp, tempdisposers, from = null, to = null, i, j, k, item;
+        var new_items = seq(), new_len = new_items.length, new_indices, item_indices, temp, tempdisposers, from = null, to = null, i, j, start, end, new_end, item;
         // fast path for empty arrays
         if (new_len === 0) {
             if (len !== 0) {
@@ -205,46 +205,71 @@ export function mapSample(seq, enter, exit, move) {
             }
         }
         else if (len === 0) {
-            for (i = 0; i < new_len; i++) {
-                item = items[i] = new_items[i];
-                mapped[i] = S.root(mapper);
+            for (j = 0; j < new_len; j++) {
+                items[j] = new_items[j];
+                mapped[j] = S.root(mapper);
             }
             len = new_len;
         }
         else {
+            new_indices = new Map();
             temp = new Array(new_len);
             tempdisposers = new Array(new_len);
             if (move)
                 from = [], to = [];
-            // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
-            NEXT: for (i = 0, k = 0; i < len; i++) {
-                item = items[i];
-                for (j = 0; j < new_len; j++, k = (k + 1) % new_len) {
-                    if (item === new_items[k] && !temp.hasOwnProperty(k.toString())) {
-                        temp[k] = mapped[i];
-                        tempdisposers[k] = disposers[i];
-                        if (move && i !== k) {
-                            from.push(i);
-                            to.push(k);
-                        }
-                        k = (k + 1) % new_len;
-                        continue NEXT;
-                    }
-                }
-                if (exit)
-                    exit(item, mapped[i], i);
-                disposers[i]();
+            // skip common prefix and suffix
+            for (start = 0, end = Math.min(len, new_len); start < end && items[start] === new_items[start]; start++)
+                ;
+            for (end = len - 1, new_end = new_len - 1; end >= 0 && new_end >= 0 && items[end] === new_items[new_end]; end--, new_end--) {
+                temp[new_end] = mapped[end];
+                tempdisposers[new_end] = disposers[end];
             }
-            if (move && from.length)
-                move(items, mapped, from, to);
-            // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
-            for (i = 0; i < new_len; i++) {
-                if (temp.hasOwnProperty(i.toString())) {
-                    mapped[i] = temp[i];
-                    disposers[i] = tempdisposers[i];
+            // 0) prepare a map of all indices in new_items, scanning backwards so we can pop them off in natural order
+            for (j = new_end; j >= start; j--) {
+                item = new_items[j];
+                item_indices = new_indices.get(item);
+                if (item_indices === undefined) {
+                    new_indices.set(item, [j]);
                 }
                 else {
-                    mapped[i] = S.root(mapper);
+                    item_indices.push(j);
+                }
+            }
+            // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
+            for (i = start; i <= end; i++) {
+                item = items[i];
+                item_indices = new_indices.get(item);
+                if (item_indices !== undefined && item_indices.length > 0) {
+                    j = item_indices.pop();
+                    temp[j] = mapped[i];
+                    tempdisposers[j] = disposers[i];
+                    if (move && i !== j) {
+                        from.push(i);
+                        to.push(j);
+                    }
+                }
+                else {
+                    if (exit)
+                        exit(item, mapped[i], i);
+                    disposers[i]();
+                }
+            }
+            if (move && (from.length !== 0 || end !== len - 1)) {
+                end++, new_end++;
+                while (end < len) {
+                    from.push(end++);
+                    to.push(new_end++);
+                }
+                move(items, mapped, from, to);
+            }
+            // 2) set all the new values, pulling from the temp array if copied, otherwise entering the new value
+            for (j = start; j < new_len; j++) {
+                if (temp.hasOwnProperty(j)) {
+                    mapped[j] = temp[j];
+                    disposers[j] = tempdisposers[j];
+                }
+                else {
+                    mapped[j] = S.root(mapper);
                 }
             }
             // 3) in case the new set is shorter than the old, set the length of the mapped array
@@ -254,8 +279,8 @@ export function mapSample(seq, enter, exit, move) {
         }
         return mapped;
         function mapper(disposer) {
-            disposers[i] = disposer;
-            return enter(new_items[i], mapped[i], i);
+            disposers[j] = disposer;
+            return enter(new_items[j], mapped[j], j);
         }
     });
 }
