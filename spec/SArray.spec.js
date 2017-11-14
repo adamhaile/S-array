@@ -419,6 +419,70 @@ describe("SArray.map", function () {
     });
 });
 
+describe("SArray.mapSequentially", function () {
+    var a;
+
+    beforeEach(function () {
+        a = SArray([1, 3, 2]);
+    });
+
+    it("behaves like Array.prototype.map", function () {
+        S.root(function () {
+            var s = a.mapSequentially(function (x) { return x * 2; });
+            expect(s()).toEqual([2, 6, 4]);
+        });
+    });
+
+    it("tracks changes in source", function () {
+        S.root(function () {
+            var s = a.mapSequentially(function (x) { return x * 2; });
+            a.push(4);
+            expect(s()).toEqual([2, 6, 4, 8]);
+        });
+    });
+
+    it("does not preserve prior computations", function () {
+        S.root(function () {
+            var s = a.mapSequentially(function (x) { return Math.random(); }),
+                pre = s().slice();
+            a.push(4);
+            var post = s().slice();
+            expect(post.length).toBe(4);
+            expect(pre[0]).not.toEqual(post[0]);
+            expect(pre[1]).not.toEqual(post[1]);
+            expect(pre[2]).not.toEqual(post[2]);
+        });
+    });
+    
+    it("passes the result of prior computations to updates", function () {
+        S.root(function () {
+            var s = a.mapSequentially(function (x, p) { return x + (p | 0); });
+
+            expect(s()).toEqual([1, 3, 2]);
+
+            a.push(4);
+
+            expect(s()).toEqual([2, 6, 4, 4]);
+
+            a.push(5);
+
+            expect(s()).toEqual([3, 9, 6, 8, 5]);
+        });
+    });
+
+    it("tracks changes to other dependencies", function () {
+        S.root(function () {
+            var d = S.data(1),
+                s = a.mapSequentially(function (v) { return v + d(); });
+            expect(s()).toEqual([2, 4, 3]);
+            d(2);
+            expect(s()).toEqual([3, 5, 4]);
+            a.push(4);
+            expect(s()).toEqual([3, 5, 4, 6]);
+        });
+    });
+});
+
 
 describe("SArray.sort", function () {
     var a;

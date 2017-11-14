@@ -15,6 +15,7 @@ export interface SArray<T> {
     some(pred: (v: T) => boolean): () => boolean;
     mapS<U>(fn: (v: T, m: U | undefined, i: number) => U, exit?: (v: T, m: U, i: number) => void, move?: (items: T[], mapped: (() => U)[], from: number[], to: number[]) => void): SSignalArray<U>;
     mapSample<U>(fn: (v: T, m: U | undefined, i: number) => U, exit?: (v: T, m: U, i: number) => void, move?: (items: T[], mapped: U[], from: number[], to: number[]) => void): SArray<U>;
+    mapSequentially<U>(fn: (v: T, m: U | undefined, i: number) => U): SArray<U>;
     orderBy<U>(key: (v: T) => U): SArray<T>;
 }
 export interface SSignalArray<T> extends SArray<() => T> {
@@ -34,6 +35,7 @@ export default function SArray<T>(values: T[]): SDataArray<T>;
 export declare function lift<T>(seq: () => T[]): SArray<T>;
 export declare function mapS<T, U>(seq: () => T[], enter: (v: T, m: U | undefined, i: number) => U, exit?: (v: T, m: U, i: number) => void, move?: (items: T[], mapped: (() => U)[], from: number[], to: number[]) => void): () => (() => U)[];
 export declare function mapSample<T, U>(seq: () => T[], enter: (v: T, m: U | undefined, i: number) => U, exit?: (v: T, m: U, i: number) => void, move?: (items: T[], mapped: U[], from: number[], to: number[]) => void): () => U[];
+export declare function mapSequentially<T, U>(seq: () => T[], update: (v: T, m: U | undefined, i: number) => U): () => U[];
 export declare function forEach<T>(seq: () => T[], enter: (v: T, i: number) => void, exit?: (v: T, i: number) => void, move?: (from: number[], to: number[]) => void): () => T[];
 export declare function combine<T>(seq: () => (() => T)[]): () => T[];
 export declare function map<T, U>(seq: () => T[], enter: (v: T, m: U | undefined, i: number) => U, exit?: (v: T, m: U, i: number) => void, move?: (items: T[], mapped: U[], from: number[], to: number[]) => void): () => U[];

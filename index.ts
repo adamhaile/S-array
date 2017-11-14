@@ -20,6 +20,7 @@ export interface SArray<T> {
     
     mapS<U>(fn : (v : T, m : U | undefined, i : number) => U, exit? : (v : T, m : U, i : number) => void, move? : (items : T[], mapped : (() => U)[], from : number[], to : number[]) => void) : SSignalArray<U>;
     mapSample<U>(fn : (v : T, m : U | undefined, i : number) => U, exit? : (v : T, m : U, i : number) => void, move? : (items : T[], mapped : U[], from : number[], to : number[]) => void) : SArray<U>;
+    mapSequentially<U>(fn : (v : T, m : U | undefined, i : number) => U) : SArray<U>;
     orderBy<U>(key : (v : T) => U) : SArray<T>;
 }
 
@@ -200,6 +201,7 @@ export function lift<T>(seq : () => T[]) {
     // non-ES5 transformers
     _seq.mapS        = chainMapS;
     _seq.mapSample   = chainMapSample;
+    _seq.mapSequentially = chainMapSequentially;
     _seq.orderBy     = chainOrderBy;
 
     return _seq;
@@ -426,6 +428,28 @@ function chainMapSample<T, U>(
     move? : (items : T[], mapped : U[], from : number[], to : number[]) => void
 ) {
     return lift(mapSample(this, enter, exit, move));
+}
+
+export function mapSequentially<T, U>(
+    seq: () => T[], 
+    update: (v: T, m: U | undefined, i: number) => U
+) {
+    var mapped = [] as U[];
+    return S(function mapSequentially() {
+        var s = seq();
+        for (var i = 0; i < s.length; i++) {
+            mapped[i] = update(s[i], mapped[i], i);
+        }
+        if (mapped.length > s.length) mapped.length = s.length;
+        return mapped;
+    });
+}
+
+function chainMapSequentially<T, U>(
+    this : () => T[], 
+    enter : (v : T, m : U | undefined, i : number) => U
+) {
+    return lift(mapSequentially(this, enter));
 }
 
 export function forEach<T>(

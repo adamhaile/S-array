@@ -127,6 +127,7 @@ function lift(seq) {
     // non-ES5 transformers
     _seq.mapS = chainMapS;
     _seq.mapSample = chainMapSample;
+    _seq.mapSequentially = chainMapSequentially;
     _seq.orderBy = chainOrderBy;
     return _seq;
 }
@@ -293,6 +294,21 @@ function mapSample(seq, enter, exit, move) {
 }
 function chainMapSample(enter, exit, move) {
     return lift(mapSample(this, enter, exit, move));
+}
+function mapSequentially(seq, update) {
+    var mapped = [];
+    return S(function mapSequentially() {
+        var s = seq();
+        for (var i = 0; i < s.length; i++) {
+            mapped[i] = update(s[i], mapped[i], i);
+        }
+        if (mapped.length > s.length)
+            mapped.length = s.length;
+        return mapped;
+    });
+}
+function chainMapSequentially(enter) {
+    return lift(mapSequentially(this, enter));
 }
 function forEach(seq, enter, exit, move) {
     var items = [], len = 0;
@@ -522,6 +538,7 @@ exports['default'] = SArray;
 exports.lift = lift;
 exports.mapS = mapS;
 exports.mapSample = mapSample;
+exports.mapSequentially = mapSequentially;
 exports.forEach = forEach;
 exports.combine = combine;
 exports.map = map;
