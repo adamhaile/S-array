@@ -419,6 +419,73 @@ describe("SArray.map", function () {
     });
 });
 
+describe("SArray.mapSample", function () {
+    var a;
+
+    beforeEach(function () {
+        a = SArray([1, 3, 2]);
+    });
+
+    it("behaves like Array.prototype.map", function () {
+        S.root(function () {
+            var s = a.mapSample(function (x) { return x * 2; });
+            expect(s()).toEqual([2, 6, 4]);
+        });
+    });
+
+    it("tracks changes in source", function () {
+        S.root(function () {
+            var s = a.mapSample(function (x) { return x * 2; });
+            a.push(4);
+            expect(s()).toEqual([2, 6, 4, 8]);
+        });
+    });
+
+    it("preserves prior computations", function () {
+        S.root(function () {
+            var s = a.mapSample(function (x) { return Math.random(); }),
+                pre = s().slice();
+            a.push(4);
+            expect(pre).toEqual(s().slice(0, -1));
+        });
+    });
+
+    it("reports when a value exits the array", function () {
+        S.root(function () {
+            var exit = jasmine.createSpy();
+            a.mapSample(x => x, exit);
+            a.pop();
+            expect(exit).toHaveBeenCalledWith(2, 2, 2);
+        });
+    });
+
+    it("reports when a value moves in the array", function () {
+        S.root(function () {
+            var moveCalled = false,
+                move = (...args) => {
+                    moveCalled = true;
+                    expect(args).toEqual([[1, 3, 2], [1, 3, 2], [1, 2], [2, 1]]);
+                };
+            a.mapSample(x => x, null, move);
+            expect(moveCalled).toBe(false);
+            a([1, 2, 3]);
+            expect(moveCalled).toBe(true);
+        });
+    });
+
+    it("does not track changes to other dependencies", function () {
+        S.root(function () {
+            var d = S.data(1),
+                s = a.mapSample(function (v) { return v + d(); });
+            expect(s()).toEqual([2, 4, 3]);
+            d(2);
+            expect(s()).toEqual([2, 4, 3]);
+            a.push(4);
+            expect(s()).toEqual([2, 4, 3, 6]);
+        });
+    });
+});
+
 describe("SArray.mapSequentially", function () {
     var a;
 
