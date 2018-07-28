@@ -67,7 +67,7 @@ export default function SArray(values) {
             return value;
         }
     }
-    function splice() {
+    function splice( /* arguments */) {
         var args = Array.prototype.slice.call(arguments);
         mutation(function splice() { Array.prototype.splice.apply(values, args); });
         return array;
