@@ -1,12 +1,12 @@
 {
   "name": "s-array",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Array library for S.js",
   "main": "index.js",
   "module": "es/index.js",
   "types": "es/index.d.ts",
   "peerDependencies": {
-    "s-js": "file:../S"
+    "s-js": "^0.4.9"
   },
   "devDependencies": {
     "jasmine": "^3.1.0",
