@@ -190,7 +190,7 @@ function mapSample(seq, enter, exit, move) {
     var items = [], mapped = [], disposers = [], len = 0;
     S(function () { S.cleanup(function () { disposers.forEach(function (d) { d(); }); }); });
     return S.on(seq, function mapSample() {
-        var new_items = seq(), new_len = new_items.length, new_indices, item_indices, temp, tempdisposers, from = null, to = null, i, j, start, end, new_end, item;
+        var new_items = seq(), new_len = new_items.length, new_indices, new_indices_next, temp, tempdisposers, from = null, to = null, i, j, start, end, new_end, item;
         // fast path for empty arrays
         if (new_len === 0) {
             if (len !== 0) {
@@ -232,29 +232,27 @@ function mapSample(seq, enter, exit, move) {
                 temp[new_end] = mapped[end];
                 tempdisposers[new_end] = disposers[end];
             }
-            // 0) prepare a map of all indices in new_items, scanning backwards so we can pop them off in natural order
+            // 0) prepare a map of all indices in new_items, scanning backwards so we encounter them in natural order
+            new_indices_next = new Array(new_end + 1);
             for (j = new_end; j >= start; j--) {
                 item = new_items[j];
-                item_indices = new_indices.get(item);
-                if (item_indices === undefined) {
-                    new_indices.set(item, [j]);
-                }
-                else {
-                    item_indices.push(j);
-                }
+                i = new_indices.get(item);
+                new_indices_next[j] = i === undefined ? -1 : i;
+                new_indices.set(item, j);
             }
             // 1) step through all old items and see if they can be found in the new set; if so, save them in a temp array and mark them moved; if not, exit them
             for (i = start; i <= end; i++) {
                 item = items[i];
-                item_indices = new_indices.get(item);
-                if (item_indices !== undefined && item_indices.length > 0) {
-                    j = item_indices.pop();
+                j = new_indices.get(item);
+                if (j !== undefined && j !== -1) {
                     temp[j] = mapped[i];
                     tempdisposers[j] = disposers[i];
                     if (move && i !== j) {
                         from.push(i);
                         to.push(j);
                     }
+                    j = new_indices_next[j];
+                    new_indices.set(item, j);
                 }
                 else {
                     if (exit)
