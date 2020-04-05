@@ -1,5 +1,6 @@
 export interface SArray<T> {
     (): T[];
+    length: number;
     concat(...others: (() => T | T[])[]): SArray<T>;
     every(pred: (v: T) => boolean): () => boolean;
     filter(pred: (v: T) => boolean): SArray<T>;
@@ -43,6 +44,7 @@ export declare function find<T>(seq: () => T[], pred: (v: T) => boolean): () => 
 export declare function includes<T>(seq: () => T[], o: T): () => boolean;
 export declare function sort<T>(seq: () => T[], fn?: (a: T, b: T) => number): () => T[];
 export declare function orderBy<T>(seq: () => T[], by: keyof T | ((v: T) => any)): () => T[];
+export declare function length<T>(seq: () => T[]): () => number;
 export declare function filter<T>(seq: () => T[], predicate: (v: T) => boolean): () => T[];
 export declare function concat<T>(seq: () => T[], ...others: (() => T | T[])[]): () => T[];
 export declare function reduce<T, U>(seq: () => T[], fn: (r: U, t: T, i: number, s: T[]) => U, seed: U | (() => U)): () => U;

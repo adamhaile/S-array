@@ -1,4 +1,5 @@
 // by default SArray is loaded into 'default' symbol when module is bound to a global
+lift = SArray.lift
 SArray = SArray.default;
 
 /* globals describe, expect, beforeEach, jasmine, it, S */
@@ -520,7 +521,7 @@ describe("SArray.mapSequentially", function () {
             expect(pre[2]).not.toEqual(post[2]);
         });
     });
-    
+
     it("passes the result of prior computations to updates", function () {
         S.root(function () {
             var s = a.mapSequentially(function (x, p) { return x + (p | 0); });
@@ -732,6 +733,46 @@ describe("SArray.orderBy", function () {
             var s = a.orderBy(function (v) { return -v; });
             a.push(0);
             expect(s()).toEqual([3, 2, 1, 0]);
+        });
+    });
+});
+
+describe("SArray.length", function () {
+    it("can provide the length of the underneath array", function () {
+
+        var a = SArray([]);
+        expect(a.length).toEqual(0);
+        a.push('a');
+        expect(a.length).toEqual(1);
+        a.push('a');
+        expect(a.length).toEqual(2);
+        a.pop();
+        expect(a.length).toEqual(1);
+
+        expect(lift(S.data([])).length).toEqual(0);
+        expect(lift(S.data([1, 2, 3])).length).toEqual(3);
+
+    });
+
+    it("should trigger updates when length is changed", function () {
+        S.root(dispose => {
+            var a = SArray([]);
+
+            var enter = jasmine.createSpy();
+            S.on(a, () => enter(a.length));
+
+            expect(enter).toHaveBeenCalledWith(0);
+
+            a.push('a');
+            expect(enter).toHaveBeenCalledWith(1);
+
+            a.push('a');
+            expect(enter).toHaveBeenCalledWith(2);
+
+            a.pop();
+            expect(enter).toHaveBeenCalledWith(1);
+
+            dispose();
         });
     });
 });

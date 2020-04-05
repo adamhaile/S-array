@@ -26,13 +26,14 @@ if(typeof jasmine === "undefined"){
             },
         };
         call.toHaveBeenCalledWith = function () {
-            expect(arguments).deep.equal(args)
+            expect(args).deep.equal(arguments)
         };
         return call
     }
 }
 
 // by default SArray is loaded into 'default' symbol when module is bound to a global
+lift = SArray.lift
 SArray = SArray.default;
 
 /* globals describe, expect, beforeEach, jasmine, it, S */
@@ -766,6 +767,46 @@ describe("SArray.orderBy", function () {
             var s = a.orderBy(function (v) { return -v; });
             a.push(0);
             expect(s()).deep.equal([3, 2, 1, 0]);
+        });
+    });
+});
+
+describe("SArray.length", function () {
+    it("can provide the length of the underneath array", function () {
+
+        var a = SArray([])
+        expect(a.length).equal(0);
+        a.push('a');
+        expect(a.length).equal(1);
+        a.push('a');
+        expect(a.length).equal(2);
+        a.pop();
+        expect(a.length).equal(1);
+
+        expect(lift(S.data([])).length).equal(0);
+        expect(lift(S.data([1, 2, 3])).length).equal(3);
+
+    });
+
+    it("should trigger updates when length is changed", function () {
+        S.root(dispose => {
+            var a = SArray([]);
+
+            var enter = jasmine.createSpy();
+            S.on(a, () => enter(a.length));
+
+            enter.toHaveBeenCalledWith(0);
+
+            a.push('a');
+            enter.toHaveBeenCalledWith(1);
+
+            a.push('a');
+            enter.toHaveBeenCalledWith(2);
+
+            a.pop();
+            enter.toHaveBeenCalledWith(1);
+
+            dispose();
         });
     });
 });

@@ -124,6 +124,12 @@
         _seq.reverse = chainReverse;
         _seq.slice = chainSlice;
         _seq.some = chainSome;
+        Object.defineProperty(_seq, 'length', {
+            // get: length(_seq)
+            get: function length() {
+                return _seq().length;
+            }
+        });
         // non-ES5 transformers
         _seq.mapS = chainMapS;
         _seq.mapSample = chainMapSample;
@@ -427,6 +433,12 @@
     function chainOrderBy(by) {
         return lift(orderBy(this, by));
     }
+    function length(seq) {
+        return S(function length() {
+            var s = seq();
+            return s.length;
+        });
+    }
     function filter(seq, predicate) {
         return S(function filter() {
             var s = seq(), result = [], i, v;
@@ -544,6 +556,7 @@
     exports.includes = includes;
     exports.sort = sort;
     exports.orderBy = orderBy;
+    exports.length = length;
     exports.filter = filter;
     exports.concat = concat;
     exports.reduce = reduce;
