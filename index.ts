@@ -3,6 +3,7 @@ import S from "s-js";
 
 export interface SArray<T> {
     () : T[];
+    length: number;
 
     concat(...others : (() => T | T[])[]) : SArray<T>;
     every(pred : (v : T) => boolean) : () => boolean;
@@ -197,6 +198,12 @@ export function lift<T>(seq : () => T[]) {
     _seq.reverse     = chainReverse;
     _seq.slice       = chainSlice;
     _seq.some        = chainSome;
+    Object.defineProperty(_seq, 'length', {
+        // get: length(_seq)
+        get: function length() {
+            return _seq().length;
+        }
+    });
 
     // non-ES5 transformers
     _seq.mapS        = chainMapS;
@@ -613,6 +620,14 @@ export function orderBy<T>(seq : () => T[], by : keyof T | ((v : T) => any)) {
 
 function chainOrderBy<T>(this : () => T[], by : keyof T | ((v : T) => any)) {
     return lift(orderBy(this, by));
+}
+
+export function length<T>(seq : () => T[]) {
+    return S(function length() {
+        var s = seq();
+
+        return s.length;
+    });
 }
 
 export function filter<T>(seq : () => T[], predicate : (v : T) => boolean) {

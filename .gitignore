@@ -2,4 +2,9 @@
 # Mac desktop service store files
 .DS_Store
 
+# node.js
 /node_modules/
+pnpm-lock.yaml
+
+# IDE
+.idea/

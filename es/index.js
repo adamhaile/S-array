@@ -117,6 +117,12 @@ export function lift(seq) {
     _seq.reverse = chainReverse;
     _seq.slice = chainSlice;
     _seq.some = chainSome;
+    Object.defineProperty(_seq, 'length', {
+        // get: length(_seq)
+        get: function length() {
+            return _seq().length;
+        }
+    });
     // non-ES5 transformers
     _seq.mapS = chainMapS;
     _seq.mapSample = chainMapSample;
@@ -419,6 +425,12 @@ export function orderBy(seq, by) {
 }
 function chainOrderBy(by) {
     return lift(orderBy(this, by));
+}
+export function length(seq) {
+    return S(function length() {
+        var s = seq();
+        return s.length;
+    });
 }
 export function filter(seq, predicate) {
     return S(function filter() {
