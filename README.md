@@ -39,4 +39,4 @@ arr.push(4);
 rands(); // ["0.83", "0.75", "0.77", "0.25"] unchanged values reused
 ```
 
-For a full list of methods and thier signatures, consult [index.d.ts](index.d.ts).
+For a full list of methods and thier signatures, consult [index.ts](index.ts).
